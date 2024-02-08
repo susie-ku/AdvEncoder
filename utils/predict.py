@@ -260,12 +260,13 @@ def knn_patch_fr(args, train_loader, test_loader, model, p, mask, k=20, T=0.07):
 def extract_features(args, loader, model):
     model.eval()
     backbone_features, labels = [], []
-    for im, lab in tqdm(loader):
-        im = im.cuda(non_blocking=True)
-        lab = lab.cuda(non_blocking=True)
-        outs = model(normalzie(args,im))
+    # for im, lab in tqdm(loader):
+    for it, (index, batch, label) in enumerate(tqdm(loader)):
+        batch = batch.cuda(non_blocking=True)
+        label = label.cuda(non_blocking=True)
+        outs = model(normalzie(args,batch))
         backbone_features.append(outs)
-        labels.append(lab)
+        labels.append(label)
     model.train()
     backbone_features = torch.cat(backbone_features)
     labels = torch.cat(labels)
@@ -275,16 +276,17 @@ def extract_features(args, loader, model):
 def extract_patch_features(args, loader, model, p, mask):
     model.eval()
     backbone_features, labels = [], []
-    for im, lab in tqdm(loader):
-        new_shape = im.shape
-        im = torch.mul(mask.type(torch.FloatTensor), p.type(torch.FloatTensor)) + torch.mul(
-            1 - mask.expand(new_shape).type(torch.FloatTensor), im.type(torch.FloatTensor))
+    # for im, lab in tqdm(loader):
+    for it, (index, batch, label) in enumerate(tqdm(loader)):
+        new_shape = batch.shape
+        batch = torch.mul(mask.type(torch.FloatTensor), p.type(torch.FloatTensor)) + torch.mul(
+            1 - mask.expand(new_shape).type(torch.FloatTensor), batch.type(torch.FloatTensor))
 
-        im = im.cuda(non_blocking=True)
-        lab = lab.cuda(non_blocking=True)
-        outs = model(normalzie(args, im))
+        batch = batch.cuda(non_blocking=True)
+        label = label.cuda(non_blocking=True)
+        outs = model(normalzie(args, batch))
         backbone_features.append(outs)
-        labels.append(lab)
+        labels.append(label)
     model.train()
     backbone_features = torch.cat(backbone_features)
     labels = torch.cat(labels)

@@ -5,7 +5,7 @@ def patch_initialization(args, patch_type='rectangle'):
     noise_percentage = args.noise_percentage
     if args.dataset == 'cifar10':
         image_size = (3, 64, 64)
-    else: image_size = (3, 64, 64)
+    else: image_size = (3, 224, 224)
     if patch_type == 'rectangle':
         mask_length = int((noise_percentage * image_size[1] * image_size[2])**0.5)
         patch = np.random.rand(image_size[0], mask_length, mask_length)
@@ -14,7 +14,7 @@ def patch_initialization(args, patch_type='rectangle'):
 def mask_generation(args, patch):
     if args.dataset == 'cifar10':
         image_size = (3, 64, 64)
-    else: image_size = (3, 64, 64)
+    else: image_size = (3, 224, 224)
     applied_patch = np.zeros(image_size)
     x_location = image_size[1] - 14 - patch.shape[1]
     y_location = image_size[1] - 14 - patch.shape[2]

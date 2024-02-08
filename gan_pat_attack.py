@@ -16,6 +16,35 @@ from utils.load_data import load_data, normalzie
 from utils.predict import knn_patch_fr, make_print_to_file
 from utils.fr_util import generate_high
 from utils.patch_utils import patch_initialization, mask_generation, clamp_patch
+from tqdm import tqdm
+
+from torchvision.models import (
+    # densenet121,
+    densenet161,
+    efficientnet_b0, 
+    efficientnet_b3,
+    inception_v3,
+    resnet101,
+    resnet152,
+    # resnet50,
+    vgg19,
+    wide_resnet101_2,
+    # wide_resnet50_2
+)
+
+from torchvision.models import (
+    # DenseNet121_Weights,
+    DenseNet161_Weights,
+    EfficientNet_B0_Weights,
+    EfficientNet_B3_Weights,
+    Inception_V3_Weights,
+    ResNet101_Weights,
+    ResNet152_Weights,
+    # ResNet50_Weights,
+    VGG19_Weights,
+    Wide_ResNet101_2_Weights,
+    # Wide_ResNet50_2_Weights
+)
 
 def arg_parse():
     parser = argparse.ArgumentParser(description="AdvEncoder-PAT")
@@ -65,15 +94,18 @@ def uap_dcgan_attack(args, train_loader, test_loader, model, mask):
     
     # Training GAN
     # define a global fix noise z
-    z = torch.randn(args.batch_size, G_input_dim).view(-1, G_input_dim, 1, 1)
+    # z = torch.randn(args.batch_size, G_input_dim).view(-1, G_input_dim, 1, 1)
+    z = torch.randn(224, G_input_dim).view(-1, G_input_dim, 1, 1)
     z = Variable(z.cuda())
+    # print(z.shape)
 
     for epoch in range(args.epochs):
 
         # init the start time
         start = time.time()
 
-        for i, (images, _) in enumerate(train_loader):
+        # for i, (images, _) in enumerate(train_loader):
+        for it, (index, images, label) in enumerate(tqdm(train_loader)):
        
             x = Variable(images.cuda())
             new_shape = x.shape
@@ -83,6 +115,12 @@ def uap_dcgan_attack(args, train_loader, test_loader, model, mask):
             uap_noise.cuda()
             
             # fake image
+            # print(mask.shape)
+            # print(uap_noise.shape)
+            # print(new_shape)
+            # print(x.shape)
+            print(torch.mul(1 - mask.expand(new_shape).type(torch.FloatTensor), x.type(torch.FloatTensor)).shape)
+            print(torch.mul(mask.type(torch.FloatTensor), uap_noise.type(torch.FloatTensor)).shape)
             f_x = torch.mul(mask.type(torch.FloatTensor),
                                            uap_noise.type(torch.FloatTensor)) + torch.mul(
                 1 - mask.expand(new_shape).type(torch.FloatTensor), x.type(torch.FloatTensor))
@@ -190,7 +228,8 @@ if __name__ == '__main__':
     print('Day: %s, Pre-trained Encoder: %s, Dataset: %s, Adv_criterion: %s, Noise_percentage: %.2f' % (now_time, args.victim, args.dataset, args.criterion, args.noise_percentage))
 
     # load the pre-trained model
-    model = torch.nn.DataParallel(load_victim(args))
+    # model = torch.nn.DataParallel(load_victim(args))
+    model = torch.nn.DataParallel(densenet161(weights=DenseNet161_Weights.IMAGENET1K_V1))
 
     # load the data
     train_loader, test_loader = load_data(args.dataset, args.batch_size)
